@@ -1,0 +1,8 @@
+spring.datasource.url=jdbc:postgresql://YOUR_HOST/YOUR_DB?sslmode=require
+spring.datasource.username=YOUR_USERNAME
+spring.datasource.password=YOUR_PASSWORD
+
+spring.mail.username=your_gmail@gmail.com
+spring.mail.password=your_app_password
+
+openai.api.key=your_openai_key
