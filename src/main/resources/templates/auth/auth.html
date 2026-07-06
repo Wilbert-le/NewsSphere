@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>NewsSphere — Sign In</title>
+
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+    <!-- Tabler Icons -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+
+    <!-- Auth CSS -->
+    <link rel="stylesheet" th:href="@{/css/auth.css}"/>
+
+    <!-- CSRF token cho AJAX nếu cần -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body>
+
+<!-- Data bridge: chuyển activeTab từ server sang JS -->
+<div id="activeTabData"
+     th:data-tab="${activeTab != null ? activeTab : 'login'}"
+     style="display:none"></div>
+
+<div class="auth-layout">
+
+    <!-- ==================== LEFT PANEL ==================== -->
+    <div class="left-panel">
+        <div class="left-bg-circle" style="width:300px;height:300px;top:-80px;right:-80px"></div>
+        <div class="left-bg-circle" style="width:200px;height:200px;bottom:-60px;left:-60px"></div>
+
+        <!-- Brand -->
+        <div class="brand">
+            <div class="brand-icon">
+                <i class="ti ti-radio" aria-hidden="true"></i>
+            </div>
+            <span class="brand-name">News<span class="brand-sphere">Sphere</span></span>
+        </div>
+
+        <!-- Content -->
+        <div class="left-content">
+            <div class="left-tagline">
+                Your world,<br><span>curated by AI.</span>
+            </div>
+            <div class="left-desc">
+                Stay ahead with personalized news summaries from trusted global sources — delivered in real time.
+            </div>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <div class="feature-dot"><i class="ti ti-bolt" aria-hidden="true"></i></div>
+                    <span class="feature-text">AI-powered summaries from 500+ sources</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot"><i class="ti ti-chart-line" aria-hidden="true"></i></div>
+                    <span class="feature-text">Real-time market data: gold, crypto, stocks</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot"><i class="ti ti-adjustments-horizontal" aria-hidden="true"></i></div>
+                    <span class="feature-text">Fully personalized to your interests</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot"><i class="ti ti-bell" aria-hidden="true"></i></div>
+                    <span class="feature-text">Daily briefing delivered every morning</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="left-footer">© 2026 NewsSphere. All rights reserved.</div>
+    </div>
+
+    <!-- ==================== RIGHT PANEL ==================== -->
+    <div class="right-panel">
+        <div class="form-card">
+
+            <!-- Form Header -->
+            <div class="form-header">
+                <div class="form-title" id="formTitle">Welcome back</div>
+                <div class="form-subtitle" id="formSubtitle">Sign in to your NewsSphere account</div>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div class="tab-switcher">
+                <button class="auth-tab active" id="tabLogin"
+                        type="button" onclick="switchTab('login')">
+                    Sign in
+                </button>
+                <button class="auth-tab" id="tabRegister"
+                        type="button" onclick="switchTab('register')">
+                    Create account
+                </button>
+            </div>
+
+            <!-- ==================== LOGIN FORM ==================== -->
+            <form class="login-form" id="loginForm"
+                  th:action="@{/auth/login}" method="post"
+                  style="display:flex">
+
+                <!-- CSRF -->
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                <!-- Success message (sau khi register xong) -->
+                <div class="alert alert-success"
+                     th:if="${successMsg != null}"
+                     th:text="${successMsg}"></div>
+
+                <!-- Logout message -->
+                <div class="alert alert-success"
+                     th:if="${logoutMsg != null}"
+                     th:text="${logoutMsg}"></div>
+
+                <!-- Error message -->
+                <div class="alert alert-error"
+                     th:if="${errorMsg != null}"
+                     th:text="${errorMsg}"></div>
+
+                <!-- Email -->
+                <div class="field">
+                    <label for="loginEmail">Email</label>
+                    <div class="field-wrap">
+                        <i class="ti ti-mail field-icon" aria-hidden="true"></i>
+                        <input type="email"
+                               id="loginEmail"
+                               name="email"
+                               placeholder="you@example.com"
+                               autocomplete="email"
+                               required/>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="field">
+                    <label for="loginPwd">Password</label>
+                    <div class="field-wrap">
+                        <i class="ti ti-lock field-icon" aria-hidden="true"></i>
+                        <input type="password"
+                               id="loginPwd"
+                               name="password"
+                               placeholder="Enter your password"
+                               autocomplete="current-password"
+                               required/>
+                        <button class="eye-btn" type="button"
+                                onclick="togglePwd('loginPwd', this)"
+                                aria-label="Show password">
+                            <i class="ti ti-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <a th:href="@{/auth/forgot-password}" class="forgot">Forgot password?</a>
+
+                <!-- Remember Me (ẩn, Spring Security tự xử lý) -->
+                <input type="checkbox" name="remember-me" style="display:none" checked/>
+
+                <button class="submit-btn" type="submit">Sign in</button>
+
+                <div class="divider-row">
+                    <div class="divider-line"></div>
+                    <span class="divider-text">or continue with</span>
+                    <div class="divider-line"></div>
+                </div>
+
+                <div class="social-btns">
+                    <button type="button" class="social-btn">
+                        <i class="ti ti-brand-google" aria-hidden="true"></i>Google
+                    </button>
+                    <button type="button" class="social-btn">
+                        <i class="ti ti-brand-github" aria-hidden="true"></i>GitHub
+                    </button>
+                </div>
+            </form>
+
+            <!-- ==================== REGISTER FORM ==================== -->
+            <form class="register-form" id="registerForm"
+                  th:action="@{/auth/register}" method="post"
+                  th:object="${registerDTO}"
+                  style="display:none">
+
+                <!-- CSRF -->
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                <!-- Register Error -->
+                <div class="alert alert-error"
+                     th:if="${registerError != null}"
+                     th:text="${registerError}"></div>
+
+                <!-- Full Name -->
+                <div class="field">
+                    <label for="regName">Full name</label>
+                    <div class="field-wrap">
+                        <i class="ti ti-user field-icon" aria-hidden="true"></i>
+                        <input type="text"
+                               id="regName"
+                               th:field="*{fullName}"
+                               th:class="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''"
+                               placeholder="Alex Kim"
+                               autocomplete="name"/>
+                    </div>
+                    <span class="field-error"
+                          th:if="${#fields.hasErrors('fullName')}"
+                          th:errors="*{fullName}"></span>
+                </div>
+
+                <!-- Email -->
+                <div class="field">
+                    <label for="regEmail">Email</label>
+                    <div class="field-wrap">
+                        <i class="ti ti-mail field-icon" aria-hidden="true"></i>
+                        <input type="email"
+                               id="regEmail"
+                               th:field="*{email}"
+                               th:class="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
+                               placeholder="you@example.com"
+                               autocomplete="email"/>
+                    </div>
+                    <span class="field-error"
+                          th:if="${#fields.hasErrors('email')}"
+                          th:errors="*{email}"></span>
+                </div>
+
+                <!-- Password -->
+                <div class="field">
+                    <label for="regPwd">Password</label>
+                    <div class="field-wrap">
+                        <i class="ti ti-lock field-icon" aria-hidden="true"></i>
+                        <input type="password"
+                               id="regPwd"
+                               th:field="*{password}"
+                               th:class="${#fields.hasErrors('password')} ? 'is-invalid' : ''"
+                               placeholder="Min. 8 characters"
+                               autocomplete="new-password"/>
+                        <button class="eye-btn" type="button"
+                                onclick="togglePwd('regPwd', this)"
+                                aria-label="Show password">
+                            <i class="ti ti-eye"></i>
+                        </button>
+                    </div>
+                    <span class="field-error"
+                          th:if="${#fields.hasErrors('password')}"
+                          th:errors="*{password}"></span>
+                </div>
+
+                <!-- Interests (rendered by JS, submitted as hidden inputs) -->
+                <div>
+                    <div class="interests-label">I'm interested in</div>
+                    <div class="interests-grid" id="interestGrid"></div>
+                    <!-- Hidden inputs được tạo bởi auth.js -->
+                </div>
+
+                <button class="submit-btn" type="submit">Create account</button>
+
+                <div class="divider-row">
+                    <div class="divider-line"></div>
+                    <span class="divider-text">or continue with</span>
+                    <div class="divider-line"></div>
+                </div>
+
+                <div class="social-btns">
+                    <button type="button" class="social-btn">
+                        <i class="ti ti-brand-google" aria-hidden="true"></i>Google
+                    </button>
+                    <button type="button" class="social-btn">
+                        <i class="ti ti-brand-github" aria-hidden="true"></i>GitHub
+                    </button>
+                </div>
+
+                <div class="terms">
+                    By creating an account you agree to our
+                    <a href="#">Terms of Service</a> and
+                    <a href="#">Privacy Policy</a>.
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Auth JS -->
+<script th:src="@{/js/auth.js}"></script>
+</body>
+</html>
