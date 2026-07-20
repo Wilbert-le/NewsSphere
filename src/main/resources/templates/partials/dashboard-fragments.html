@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ==================== HERO CARD (bài nổi bật đầu feed) ==================== -->
+<div th:fragment="heroCard(article, hot)" class="hero-card"
+     th:attr="data-category=${article.category},data-article-id=${article.id}">
+  <div class="hero-img">
+    <span th:text="${article.icon}">📰</span>
+    <div class="hero-pills">
+      <span class="pill pill-cat" th:text="${#strings.toUpperCase(article.category)}">CATEGORY</span>
+      <span class="pill pill-hot" th:if="${hot}">🔥 Trending</span>
+    </div>
+  </div>
+  <div class="hero-body">
+    <div class="news-meta-top">
+      <span class="source" th:text="${article.sourceName}">Source</span>
+      <span>&middot;</span>
+      <span th:text="${article.timeAgoLabel}">2h ago</span>
+    </div>
+    <div class="news-title" th:text="${article.title}">Headline</div>
+    <div class="news-summary" th:text="${article.aiSummary}">AI summary...</div>
+    <div class="news-meta">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div th:class="${article.aiConfidence >= 93} ? 'ai-badge hi' : 'ai-badge'">
+          <span class="ai-dot"></span>
+          <span th:text="'AI ' + ${article.aiConfidence} + '%'">AI 96%</span>
+        </div>
+        <span class="read-time" th:text="${article.readMinutes} + ' min read'">4 min read</span>
+      </div>
+      <button class="bookmark-btn static" th:attr="data-article-id=${article.id}"
+              onclick="toggleBookmark(this)" title="Save">
+        <i class="ti ti-bookmark" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== NEWS CARD (lưới bài viết) ==================== -->
+<div th:fragment="newsCard(article)" class="news-card"
+     th:attr="data-category=${article.category},data-article-id=${article.id}">
+  <div class="news-card-img">
+    <span th:text="${article.icon}">📰</span>
+    <span class="category-tag" th:text="${article.category}">Category</span>
+    <button class="bookmark-btn" th:attr="data-article-id=${article.id}"
+            onclick="toggleBookmark(this)" title="Save">
+      <i class="ti ti-bookmark" aria-hidden="true"></i>
+    </button>
+  </div>
+  <div class="news-card-body">
+    <div class="news-meta-top">
+      <span class="source" th:text="${article.sourceName}">Source</span>
+      <span>&middot;</span>
+      <span th:text="${article.timeAgoLabel}">2h ago</span>
+    </div>
+    <div class="news-title" th:text="${article.title}">Headline</div>
+    <div class="news-summary" th:text="${article.aiSummary}">AI summary...</div>
+    <div class="news-meta">
+      <div th:class="${article.aiConfidence >= 93} ? 'ai-badge hi' : 'ai-badge'">
+        <span class="ai-dot"></span>
+        <span th:text="'AI ' + ${article.aiConfidence} + '%'">AI 90%</span>
+      </div>
+      <span class="read-time" th:text="${article.readMinutes} + ' min read'">4 min read</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
