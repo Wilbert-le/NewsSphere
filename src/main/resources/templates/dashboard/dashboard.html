@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>NewsSphere — Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}"/>
+
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body>
+
+<!-- Form ẩn để logout (Spring Security mặc định yêu cầu POST + CSRF) -->
+<form th:action="@{/auth/logout}" method="post" id="logoutForm" style="display:none">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+</form>
+
+<div class="dashboard-shell">
+
+    <!-- ==================== TOP BAR ==================== -->
+    <header class="topbar">
+        <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle menu">
+            <i class="ti ti-menu-2" aria-hidden="true"></i>
+        </button>
+
+        <div class="brand">
+            <div class="brand-icon"><i class="ti ti-radio" aria-hidden="true"></i></div>
+            <span class="brand-name">News<span class="brand-sphere">Sphere</span></span>
+        </div>
+
+        <div class="search-box">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="searchInput" placeholder="Search news, topics, sources...">
+        </div>
+
+        <div class="topbar-actions">
+            <button class="icon-btn" title="Bookmarks" onclick="switchTab('saved')"><i class="ti ti-bookmark" aria-hidden="true"></i></button>
+            <button class="icon-btn" title="Notifications">
+                <i class="ti ti-bell" aria-hidden="true"></i>
+                <span class="icon-badge">5</span>
+            </button>
+            <button class="icon-btn" title="Toggle dark mode" onclick="toggleDarkMode()">
+                <i class="ti ti-moon" id="darkModeIcon" aria-hidden="true"></i>
+            </button>
+
+            <div class="avatar-menu">
+                <button class="avatar-btn" id="avatarBtn">
+                    <span class="avatar-circle" th:text="${#strings.toUpperCase(#strings.substring(user.fullName,0,1))}">A</span>
+                    <span class="avatar-btn-plan">
+                        <span class="avatar-btn-name" th:text="${user.fullName}">Alex Kim</span>
+                        <span class="avatar-btn-role" th:text="${user.role.name() == 'ADMIN'} ? 'Admin' : 'Member'">Member</span>
+                    </span>
+                </button>
+                <div class="avatar-dropdown" id="avatarDropdown">
+                    <div class="avatar-dropdown-header">
+                        <div class="avatar-dropdown-name" th:text="${user.fullName}">Alex Kim</div>
+                        <div class="avatar-dropdown-email" th:text="${user.email}">alex@email.com</div>
+                    </div>
+                    <a href="#" class="avatar-dropdown-item"><i class="ti ti-user" aria-hidden="true"></i>Profile</a>
+                    <button type="button" class="avatar-dropdown-item" onclick="openSettings()">
+                        <i class="ti ti-settings" aria-hidden="true"></i>Settings
+                    </button>
+                    <button type="button" class="avatar-dropdown-item danger" onclick="document.getElementById('logoutForm').submit()">
+                        <i class="ti ti-logout" aria-hidden="true"></i>Log out
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== BODY: 3 COLUMNS ==================== -->
+    <div class="dashboard-body">
+
+        <div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
+
+        <div class="feed-main-wrap">
+
+            <!-- ============ LEFT SIDEBAR (drawer) ============ -->
+            <aside class="sidebar-left" id="sidebarLeft">
+                <div class="sidebar-inner">
+                    <div class="profile-card">
+                        <span class="avatar-circle lg" th:text="${#strings.toUpperCase(#strings.substring(user.fullName,0,1))}">A</span>
+                        <div>
+                            <div class="profile-name" th:text="${user.fullName}">Alex Kim</div>
+                            <div class="profile-email" th:text="${user.email}">alex@email.com</div>
+                        </div>
+                    </div>
+
+                    <div class="daily-brief">
+                        <div class="brief-tag"><i class="ti ti-star" aria-hidden="true"></i>DAILY BRIEFING</div>
+                        <div class="brief-text">Your personalized AI summary for today hasn't been generated yet.</div>
+                        <button class="brief-btn" onclick="generateBriefing()">Generate briefing</button>
+                    </div>
+
+                    <div>
+                        <div class="sidebar-section-title">Feeds</div>
+                        <nav class="feed-nav">
+                            <button class="feed-nav-item active" data-tab="forYou" onclick="switchTab('forYou')">
+                                <i class="ti ti-sparkles" aria-hidden="true"></i>For You
+                            </button>
+                            <button class="feed-nav-item" data-tab="trending" onclick="switchTab('trending')">
+                                <i class="ti ti-flame" aria-hidden="true"></i>Trending
+                            </button>
+                            <button class="feed-nav-item" data-tab="latest" onclick="switchTab('latest')">
+                                <i class="ti ti-clock" aria-hidden="true"></i>Latest
+                            </button>
+                            <button class="feed-nav-item" data-tab="saved" onclick="switchTab('saved')">
+                                <i class="ti ti-bookmark" aria-hidden="true"></i>Saved
+                                <span class="nav-count" id="savedNavCount">0</span>
+                            </button>
+                        </nav>
+                    </div>
+
+                    <div>
+                        <div class="sidebar-section-title">Categories</div>
+                        <div class="category-chips">
+                            <button class="chip active" data-category="all">
+                                <i class="ti ti-layout-grid" aria-hidden="true"></i>All News
+                                <span class="chip-count" th:text="${totalArticleCount}">16</span>
+                            </button>
+                            <button class="chip" th:each="entry : ${categoryCounts}"
+                                    th:attr="data-category=${entry.key}">
+                                <i th:class="${'ti ' + (categoryIcons.get(entry.key) ?: 'ti-news')}" aria-hidden="true"></i>
+                                <span th:text="${entry.key}">Technology</span>
+                                <span class="chip-count" th:text="${entry.value}">2</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section-title">Account</div>
+                    <button class="feed-nav-item" onclick="switchTab('saved')">
+                        <i class="ti ti-bookmark" aria-hidden="true"></i>Saved Articles
+                    </button>
+                    <button class="feed-nav-item" onclick="openSettings()">
+                        <i class="ti ti-settings" aria-hidden="true"></i>Settings
+                    </button>
+                </div>
+
+                <div class="usage-box">
+                    <div class="usage-label"><span>AI Summaries</span><span class="usage-num" th:text="${totalArticleCount} + ' / 100'">16 / 100</span></div>
+                    <div class="usage-bar"><div class="usage-fill" th:style="'width:' + ${totalArticleCount} + '%'"></div></div>
+                    <div class="usage-remain" th:text="${100 - totalArticleCount} + ' summaries remaining today'">84 summaries remaining today</div>
+                </div>
+            </aside>
+
+            <!-- ============ CENTER FEED ============ -->
+            <main class="feed-main">
+
+                <div class="feed-header">
+                    <div>
+                        <div class="feed-heading" id="feedTitle">For You</div>
+                        <div class="feed-sub" id="feedSub" th:text="${totalArticleCount} + ' stories · Updated just now'">16 stories · Updated just now</div>
+                    </div>
+                    <div class="feed-tabs">
+                        <div class="feed-tab active" data-tab="forYou" onclick="switchTab('forYou')">For You</div>
+                        <div class="feed-tab" data-tab="trending" onclick="switchTab('trending')">Trending</div>
+                        <div class="feed-tab" data-tab="latest" onclick="switchTab('latest')">Latest</div>
+                        <div class="feed-tab" data-tab="saved" onclick="switchTab('saved')" id="savedTab">Saved (0)</div>
+                    </div>
+                </div>
+
+                <!-- ============ FOR YOU ============ -->
+                <section class="feed-section" id="feed-forYou">
+                    <div th:if="${!#lists.isEmpty(forYouArticles)}"
+                         th:replace="~{partials/dashboard-fragments :: heroCard(article=${forYouArticles[0]}, hot=${forYouArticles[0].trending})}"></div>
+                    <div class="news-grid">
+                        <th:block th:each="article, st : ${forYouArticles}">
+                            <div th:if="${!st.first}"
+                                 th:replace="~{partials/dashboard-fragments :: newsCard(article=${article})}"></div>
+                        </th:block>
+                    </div>
+                </section>
+
+                <!-- ============ TRENDING ============ -->
+                <section class="feed-section" id="feed-trending" style="display:none">
+                    <div th:if="${!#lists.isEmpty(trendingArticles)}"
+                         th:replace="~{partials/dashboard-fragments :: heroCard(article=${trendingArticles[0]}, hot=true)}"></div>
+                    <div class="news-grid">
+                        <th:block th:each="article, st : ${trendingArticles}">
+                            <div th:if="${!st.first}"
+                                 th:replace="~{partials/dashboard-fragments :: newsCard(article=${article})}"></div>
+                        </th:block>
+                    </div>
+                </section>
+
+                <!-- ============ LATEST ============ -->
+                <section class="feed-section" id="feed-latest" style="display:none">
+                    <div th:if="${!#lists.isEmpty(latestArticles)}"
+                         th:replace="~{partials/dashboard-fragments :: heroCard(article=${latestArticles[0]}, hot=${latestArticles[0].trending})}"></div>
+                    <div class="news-grid">
+                        <th:block th:each="article, st : ${latestArticles}">
+                            <div th:if="${!st.first}"
+                                 th:replace="~{partials/dashboard-fragments :: newsCard(article=${article})}"></div>
+                        </th:block>
+                    </div>
+                </section>
+
+                <!-- ============ SAVED (client-side, được JS điền từ bookmark) ============ -->
+                <section class="feed-section" id="feed-saved" style="display:none">
+                    <div class="news-grid" id="savedGrid"></div>
+                    <div class="empty-state" id="savedEmptyState">
+                        <i class="ti ti-bookmark" aria-hidden="true"></i>
+                        <p>No saved articles yet. Tap the bookmark icon on any article to save it here.</p>
+                    </div>
+                </section>
+            </main>
+
+            <!-- ============ RIGHT SIDEBAR ============ -->
+            <aside class="sidebar-right">
+                <div class="widget-card">
+                    <div class="market-tabs">
+                        <button class="market-tab active" onclick="setMarketTab('stocks', this)">Stocks</button>
+                        <button class="market-tab" onclick="setMarketTab('crypto', this)">Crypto</button>
+                        <button class="market-tab" onclick="setMarketTab('commodities', this)">Commodities</button>
+                    </div>
+                    <div class="market-group active" id="market-stocks">
+                        <div class="market-row" th:each="q : ${marketQuotesByClass.get('stocks')}">
+                            <div class="market-name" th:text="${q.name}">S&amp;P 500</div>
+                            <div class="market-price" th:text="${q.price}">5,234.10</div>
+                            <div th:class="${q.positive} ? 'market-change up' : 'market-change down'"
+                                 th:text="${(q.positive ? '+' : '') + q.changePercent + '%'}">+0.5%</div>
+                        </div>
+                    </div>
+                    <div class="market-group" id="market-crypto">
+                        <div class="market-row" th:each="q : ${marketQuotesByClass.get('crypto')}">
+                            <div class="market-name" th:text="${q.name}">Bitcoin</div>
+                            <div class="market-price" th:text="${q.price}">$67,420</div>
+                            <div th:class="${q.positive} ? 'market-change up' : 'market-change down'"
+                                 th:text="${(q.positive ? '+' : '') + q.changePercent + '%'}">+2.1%</div>
+                        </div>
+                    </div>
+                    <div class="market-group" id="market-commodities">
+                        <div class="market-row" th:each="q : ${marketQuotesByClass.get('commodities')}">
+                            <div class="market-name" th:text="${q.name}">Gold</div>
+                            <div class="market-price" th:text="${q.price}">$2,041.00</div>
+                            <div th:class="${q.positive} ? 'market-change up' : 'market-change down'"
+                                 th:text="${(q.positive ? '+' : '') + q.changePercent + '%'}">+0.8%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="widget-card">
+                    <div class="widget-title"><i class="ti ti-flame" aria-hidden="true"></i>Trending Topics</div>
+                    <div class="topic-list" th:each="article, st : ${trendingTopics}">
+                        <span class="topic-rank" th:text="${st.index + 1}">1</span>
+                        <span class="topic-title" th:text="${article.title}">Headline</span>
+                        <span class="topic-cat" th:text="${article.category}">Technology</span>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+</div>
+
+<!-- ==================== SETTINGS PANEL ==================== -->
+<div class="settings-overlay" id="settingsOverlay" onclick="closeSettings()"></div>
+<div class="settings-panel" id="settingsPanel">
+    <div class="sett-header">
+        <i class="ti ti-settings" style="font-size:18px;color:var(--color-text-secondary)" aria-hidden="true"></i>
+        <h2>Settings</h2>
+        <button class="sett-close" onclick="closeSettings()" aria-label="Close"><i class="ti ti-x" aria-hidden="true"></i></button>
+    </div>
+    <div class="sett-body">
+        <div class="sett-section">
+            <h3>Account</h3>
+            <div class="settings-profile-row">
+                <span class="avatar-circle lg" th:text="${#strings.toUpperCase(#strings.substring(user.fullName,0,1))}">A</span>
+                <div>
+                    <div class="settings-profile-name" th:text="${user.fullName}">Alex Kim</div>
+                    <div class="settings-profile-email" th:text="${user.email}">alex@email.com</div>
+                    <span class="settings-profile-role" th:text="${user.role.name() == 'ADMIN'} ? 'Admin' : 'Member'">Member</span>
+                </div>
+            </div>
+            <div class="form-row">
+                <label class="form-label">Display name</label>
+                <input class="form-input" th:value="${user.fullName}" readonly>
+            </div>
+            <div class="form-row">
+                <label class="form-label">Email</label>
+                <input class="form-input" th:value="${user.email}" readonly>
+            </div>
+        </div>
+        <div class="sett-section">
+            <h3>News categories to display</h3>
+            <div class="toggle-grid" id="catToggles"></div>
+        </div>
+        <div class="sett-section">
+            <h3>Market assets to track</h3>
+            <div class="toggle-grid" id="mktToggles"></div>
+        </div>
+        <button class="save-btn" onclick="saveSettings()">Save preferences</button>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    window.NS_CATEGORIES = /*[[${categoryCounts.keySet()}]]*/ [];
+    window.NS_MARKET_ASSETS = /*[[${marketQuotes.![name]}]]*/ [];
+    /*]]>*/
+</script>
+<script th:src="@{/js/dashboard.js}"></script>
+</body>
+</html>
